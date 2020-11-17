@@ -1,0 +1,28 @@
+{
+  "name": "proposal-intl-bestavailablelocale",
+  "version": "1.0.0",
+  "description": "Proposal for Intl.bestAvailableLocale",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/longlho/proposal-intl-bestavailablelocale.git"
+  },
+  "keywords": [
+    "ecma402",
+    "intl",
+    "bestavailablelocale",
+    "i18n"
+  ],
+  "author": "Long Ho <holevietlong@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/longlho/proposal-intl-bestavailablelocale/issues"
+  },
+  "homepage": "https://github.com/longlho/proposal-intl-bestavailablelocale#readme",
+  "devDependencies": {
+    "prettier": "^2.1.2"
+  }
+}

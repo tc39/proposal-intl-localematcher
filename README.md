@@ -18,8 +18,8 @@ interface Options {
 }
 
 Intl.bestAvailableLocale(
-    requestedLocales: string[], 
-    availableLocales: string[], 
+    requestedLocales: string[],
+    availableLocales: string[],
     defaultLocale: string,
     options: Options
 ): string
@@ -33,7 +33,7 @@ Intl.bestAvailableLocale(
 ## Examples
 
 ```ts
-Intl.bestAvailableLocale(['fr-XX', 'en'], ['fr', 'en'], 'en') // 'fr'
+Intl.bestAvailableLocale(["fr-XX", "en"], ["fr", "en"], "en"); // 'fr'
 ```
 
 ## Prior Arts
@@ -43,7 +43,7 @@ Intl.bestAvailableLocale(['fr-XX', 'en'], ['fr', 'en'], 'en') // 'fr'
 This is the core of hapijs header parsing with quality preferences. This however does a naive hierarchy with exact matches only. For example:
 
 ```js
-Accept.language("en;q=0.7, fr-XX;q=0.8", ['fr', 'en']); // language === "fr"
+Accept.language("en;q=0.7, fr-XX;q=0.8", ["fr", "en"]); // language === "fr"
 ```
 
 which would not be accurate.
@@ -62,4 +62,4 @@ This is the `lookup` algorithm in ECMA-402.
 
 ### [cldrjs's lookup implementation](https://github.com/rxaviers/cldrjs/blob/master/doc/bundle_lookup_matcher.md#implementation-details)
 
-Similar to UTS35 LanguageMatching. 
+Similar to UTS35 LanguageMatching.
