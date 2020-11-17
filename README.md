@@ -63,3 +63,9 @@ This is the `lookup` algorithm in ECMA-402.
 ### [cldrjs's lookup implementation](https://github.com/rxaviers/cldrjs/blob/master/doc/bundle_lookup_matcher.md#implementation-details)
 
 Similar to UTS35 LanguageMatching.
+
+## References
+
+- https://github.com/tc39/ecma402/issues/513
+- https://github.com/tc39/ecma402/issues/46
+- https://github.com/vercel/next.js/issues/18676
