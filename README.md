@@ -1,13 +1,16 @@
 # `Intl.bestAvailableLocale`
-## Overview
 
-### Motivation
+## Motivation
 
 i18n-supported websites often get a list of preferred locales via `Accept-Language` header or `navigator.languages`. They then try to determine the best available locale based on the set of locales that they support (and have translations for).
 
 This operation currently exists within ECMA-402 but is only available as an abstract operation. Surfacing this functionality as a top level API would improve locale negotiation correctness and developer productivity as sites will be able to reliably handle not only matching, but also aliases, fallbacks and such.
 
-### API
+## Status
+
+**Stage 0**
+
+## API
 
 ```ts
 interface Options {
@@ -22,12 +25,12 @@ Intl.bestAvailableLocale(
 ): string
 ```
 
-#### Options
+### Options
 
 1. `lookup` would continue to be the existing `LookupMatcher` implementation within ECMA-402.
 1. `best fit` would be implementation-dependent.
 
-### Examples
+## Examples
 
 ```ts
 Intl.bestAvailableLocale(['fr-XX', 'en'], ['fr', 'en'], 'en') // 'fr'
