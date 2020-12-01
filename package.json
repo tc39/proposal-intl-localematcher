@@ -1,28 +1,19 @@
 {
-  "name": "proposal-intl-bestavailablelocale",
-  "version": "1.0.0",
-  "description": "Proposal for Intl.bestAvailableLocale",
-  "main": "index.js",
+  "private": true,
+  "name": "template-for-proposals",
+  "description": "A repository template for ECMAScript proposals.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build-loose -- --watch",
+    "build": "npm run build-loose -- --strict",
+    "build-loose": "ecmarkup --verbose spec.emu index.html"
   },
+  "homepage": "https://github.com/tc39/template-for-proposals#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/longlho/proposal-intl-bestavailablelocale.git"
+    "url": "git+https://github.com/tc39/template-for-proposals.git"
   },
-  "keywords": [
-    "ecma402",
-    "intl",
-    "bestavailablelocale",
-    "i18n"
-  ],
-  "author": "Long Ho <holevietlong@gmail.com>",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/longlho/proposal-intl-bestavailablelocale/issues"
-  },
-  "homepage": "https://github.com/longlho/proposal-intl-bestavailablelocale#readme",
+  "license": "MIT",
   "devDependencies": {
-    "prettier": "^2.1.2"
+    "ecmarkup": "^4.0.0"
   }
 }
