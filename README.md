@@ -1,60 +1,71 @@
-# template-for-proposals
+# `Intl.LocaleMatcher`
 
-A repository template for ECMAScript proposals.
+## Motivation
 
-## Before creating a proposal
+i18n-supported websites often get a list of preferred locales via `Accept-Language` header or `navigator.languages`. They then try to determine the best available locale based on the set of locales that they support (and have translations for).
 
-Please ensure the following:
-  1. You have read the [process document](https://tc39.github.io/process-document/)
-  1. You have reviewed the [existing proposals](https://github.com/tc39/proposals/)
-  1. You are aware that your proposal requires being a member of TC39, or locating a TC39 delegate to "champion" your proposal
+This operation currently exists within ECMA-402 but is only available as an abstract operation. Surfacing this functionality as a top level API would improve locale negotiation correctness and developer productivity as sites will be able to reliably handle not only matching, but also aliases, fallbacks and such.
 
-## Create your proposal repo
+## Status
 
-Follow these steps:
-  1.  Click the green ["use this template"](https://github.com/tc39/template-for-proposals/generate) button in the repo header. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
-  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **main branch** under the root (and click Save, if it does not autosave this setting)
-      1. check "Enforce HTTPS"
-      1. On "Options", under "Features", Ensure "Issues" is checked, and disable "Wiki", and "Projects" (unless you intend to use Projects)
-      1. Under "Merge button", check "automatically delete head branches"
-<!--
-  1.  Avoid merge conflicts with build process output files by running:
-      ```sh
-      git config --local --add merge.output.driver true
-      git config --local --add merge.output.driver true
-      ```
-  1.  Add a post-rewrite git hook to auto-rebuild the output on every commit:
-      ```sh
-      cp hooks/post-rewrite .git/hooks/post-rewrite
-      chmod +x .git/hooks/post-rewrite
-      ```
--->
-  3.  ["How to write a good explainer"][explainer] explains how to make a good first impression.
+**Stage 0**
 
-      > Each TC39 proposal should have a `README.md` file which explains the purpose
-      > of the proposal and its shape at a high level.
-      >
-      > ...
-      >
-      > The rest of this page can be used as a template ...
+## API
 
-      Your explainer can point readers to the `index.html` generated from `spec.emu`
-      via markdown like
+```ts
+interface Options {
+    algorithm: 'lookup' | 'best fit'
+}
 
-      ```markdown
-      You can browse the [ecmarkup output](https://ACCOUNT.github.io/PROJECT/)
-      or browse the [source](https://github.com/ACCOUNT/PROJECT/blob/HEAD/spec.emu).
-      ```
+Intl.LocaleMatcher.match(
+    requestedLocales: string[],
+    availableLocales: string[],
+    defaultLocale: string,
+    options?: Options
+): string
+```
 
-      where *ACCOUNT* and *PROJECT* are the first two path elements in your project's Github URL.
-      For example, for github.com/**tc39**/**template-for-proposals**, *ACCOUNT* is "tc39"
-      and *PROJECT* is "template-for-proposals".
+### Options
 
+1. `lookup` would continue to be the existing `LookupMatcher` implementation within ECMA-402.
+1. `best fit` would be implementation-dependent.
 
-## Maintain your proposal repo
+## Examples
 
-  1. Make your changes to `spec.emu` (ecmarkup uses HTML syntax, but is not HTML, so I strongly suggest not naming it ".html")
-  1. Any commit that makes meaningful changes to the spec, should run `npm run build` and commit the resulting output.
-  1. Whenever you update `ecmarkup`, run `npm run build` and commit any changes that come from that dependency.
+```ts
+Intl.LocaleMatcher.match(["fr-XX", "en"], ["fr", "en"], "en"); // 'fr'
+```
 
-  [explainer]: https://github.com/tc39/how-we-work/blob/HEAD/explainer.md
+## Prior Arts
+
+### [@hapi/accept](https://github.com/hapijs/accept)
+
+This is the core of hapijs header parsing with quality preferences. This however does a naive hierarchy with exact matches only. For example:
+
+```js
+Accept.language("en;q=0.7, fr-XX;q=0.8", ["fr", "en"]); // language === "fr"
+```
+
+which would not be accurate.
+
+### [koa](https://koajs.com/#request)
+
+Similarly, Koa's `request.acceptsLanguages` follow similar exact match algorithm.
+
+### [UTS35 LanguageMatching](https://www.unicode.org/reports/tr35/tr35.html#LanguageMatching)
+
+This details a more sophisticated locale negotiation algorithm that is more accurate than `hapi`/`koa`
+
+### [RFC4647 Section 3.4](https://tools.ietf.org/html/rfc4647#section-3.4)
+
+This is the `lookup` algorithm in ECMA-402.
+
+### [cldrjs's lookup implementation](https://github.com/rxaviers/cldrjs/blob/master/doc/bundle_lookup_matcher.md#implementation-details)
+
+Similar to UTS35 LanguageMatching.
+
+## References
+
+- https://github.com/tc39/ecma402/issues/513
+- https://github.com/tc39/ecma402/issues/46
+- https://github.com/vercel/next.js/issues/18676
