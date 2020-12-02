@@ -43,7 +43,7 @@ Intl.LocaleMatcher.match(["fr-XX", "en"], ["fr", "en"], "en"); // 'fr'
 This is the core of hapijs header parsing with quality preferences. This however does a naive hierarchy with exact matches only. For example:
 
 ```js
-Accept.language("en;q=0.7, fr-XX;q=0.8", ["fr", "en"]); // language === "fr"
+Accept.language("en;q=0.7, fr-XX;q=0.8", ["fr", "en"]); // language === "en"
 ```
 
 which would not be accurate.
