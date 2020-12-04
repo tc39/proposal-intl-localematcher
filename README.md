@@ -8,7 +8,11 @@ This operation currently exists within ECMA-402 but is only available as an abst
 
 ## Status
 
-**Stage 0**
+**Stage 1**
+
+## Champion
+
+- [Long Ho (@longlho)](https://github.com/longlho)
 
 ## API
 
