@@ -1,5 +1,7 @@
 # `Intl.LocaleMatcher`
 
+![Stage 1](https://badges.aleen42.com/src/tc39_2.svg)
+
 ## Motivation
 
 i18n-supported websites often get a list of preferred locales via `Accept-Language` header or `navigator.languages`. They then try to determine the best available locale based on the set of locales that they support (and have translations for).
