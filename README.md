@@ -18,6 +18,10 @@ This operation currently exists within ECMA-402 but is only available as an abst
 
 Ponyfill: https://formatjs.io/docs/polyfills/intl-localematcher
 
+Working specification: [spec.emu](spec.emu).
+[Design notes and open questions](DESIGN.md) explain the draft semantics and
+conformance plan. These choices have not been approved by the committee.
+
 ## Champion
 
 - [Long Ho (@longlho)](https://github.com/longlho)
@@ -26,7 +30,7 @@ Ponyfill: https://formatjs.io/docs/polyfills/intl-localematcher
 
 ```ts
 interface Options {
-    algorithm: 'lookup' | 'best fit'
+    algorithm?: 'lookup' | 'best fit'
 }
 
 Intl.LocaleMatcher.match(
@@ -39,14 +43,48 @@ Intl.LocaleMatcher.match(
 
 ### Options
 
-1. `lookup` would continue to be the existing `LookupMatcher` implementation within ECMA-402.
-1. `best fit` would be implementation-dependent.
+1. `lookup` uses ECMA-402's `LookupMatchingLocaleByPrefix` operation.
+1. `best fit` is the default and uses `LookupMatchingLocaleByBestFit`. Its
+   linguistic policy and data remain implementation-defined. No CLDR or ICU
+   algorithm, data version, distance, or tie-breaking rule is required.
+
+### Draft semantics
+
+- Both lists use `CanonicalizeLocaleList`, including single strings,
+  `Intl.Locale` objects, and array-like inputs. Generic iterables are not read.
+- Available locales describe application resources, independently of the
+  engine's supported formatter locales. No implicit parent resources are added.
+- Available tags containing Unicode `u` extensions throw `RangeError` in this
+  draft. Requested `u` extensions are ignored and are not copied to the result.
+- The required fallback is validated eagerly and canonicalized. It may be
+  outside the available list. It is used only if no match is found.
+- Results are canonical strings, not original resource-key spellings.
+- Options must be an object or `undefined`, following `GetOptionsObject`.
+
+Extension-aware resource selection, multiple results, and API placement remain
+open questions. Private-use tags are accepted, but this draft does not define
+best-fit semantics for application-specific tones.
 
 ## Examples
 
 ```ts
-Intl.LocaleMatcher.match(["fr-XX", "en"], ["fr", "en"], "en"); // 'fr'
+Intl.LocaleMatcher.match(
+  ["fr-CA", "en"], ["fr", "en"], "en", {algorithm: "lookup"}
+); // 'fr'
 ```
+
+`Accept-Language` header parsing, quality weights, and `*` language ranges are
+outside this API. Parse them before passing a list of locale identifiers.
+
+## Build the draft
+
+```sh
+npm install
+npm run build
+```
+
+The strict build checks ecmarkup syntax, references, and algorithm lint rules.
+It does not validate a JavaScript implementation.
 
 ## Prior Arts
 

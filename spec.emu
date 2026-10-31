@@ -1,23 +1,75 @@
-<!doctype html>
-<meta charset="utf8">
-<link rel="stylesheet" href="./spec.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
-<script src="./spec.js"></script>
+<!DOCTYPE html>
+<meta charset="utf-8">
 <pre class="metadata">
-title: Proposal Title Goes Here
-stage: -1
-contributors: Your Name(s) Here
+title: Intl.LocaleMatcher
+stage: 1
+contributors: Long Ho
+location: https://tc39.es/proposal-intl-localematcher/
 </pre>
+<emu-biblio href="./node_modules/@tc39/ecma262-biblio/biblio.json"></emu-biblio>
+<emu-biblio href="./node_modules/@tc39/ecma402-biblio/biblio.json"></emu-biblio>
 
-<emu-clause id="sec-demo-clause">
-  <h1>This is an emu-clause</h1>
-  <p>This is an algorithm:</p>
-  <emu-alg>
-    1. Let _proposal_ be *undefined*.
-    1. If IsAccepted(_proposal_),
-      1. Let _stage_ be *0*.
-    1. Else,
-      1. Let _stage_ be *-1*.
-    1. Return ? ToString(_proposal_).
-  </emu-alg>
+<emu-intro id="sec-introduction">
+  <h1>Introduction</h1>
+  <p>This proposal exposes locale matching for application-supplied locales. It uses the locale matching operations in ECMA-402 without specifying a locale data source or a best-fit scoring algorithm.</p>
+  <p>This is a working draft. API placement, extension handling in available locales, and fallback validation remain subject to committee discussion.</p>
+</emu-intro>
+
+<emu-clause id="sec-intl.localematcher">
+  <h1>Intl.LocaleMatcher</h1>
+  <p>The objects and functions defined in this clause are subject to the <a href="https://tc39.es/ecma402/#sec-requirements-for-standard-built-in-ecmascript-objects">requirements for standard built-in ECMAScript objects</a> in ECMA-402.</p>
+  <p>The initial value of the *"LocaleMatcher"* property of the Intl object is %Intl.LocaleMatcher%.</p>
+  <p>The LocaleMatcher object:</p>
+  <ul>
+    <li>is an ordinary object.</li>
+    <li>has a [[Prototype]] internal slot whose value is %Object.prototype%.</li>
+    <li>does not have a [[Call]] internal method.</li>
+    <li>does not have a [[Construct]] internal method.</li>
+  </ul>
+  <p>Unless otherwise specified, the properties defined in this clause have the attributes { [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *true* }.</p>
+
+  <emu-clause id="sec-intl.localematcher-tostringtag">
+    <h1>Intl.LocaleMatcher [ %Symbol.toStringTag% ]</h1>
+    <p>The initial value of the %Symbol.toStringTag% property is the String value *"Intl.LocaleMatcher"*.</p>
+    <p>This property has the attributes { [[Writable]]: *false*, [[Enumerable]]: *false*, [[Configurable]]: *true* }.</p>
+  </emu-clause>
+
+  <emu-clause id="sec-intl.localematcher.match">
+    <h1>Intl.LocaleMatcher.match ( _requestedLocales_, _availableLocales_, _defaultLocale_ [ , _options_ ] )</h1>
+    <p>The method selects a locale from an application-supplied list, or returns the supplied fallback when no match is found. It performs the following steps when called:</p>
+    <emu-alg>
+      1. Let _requested_ be ? CanonicalizeLocaleList(_requestedLocales_).
+      1. Let _available_ be ? CanonicalizeLocaleList(_availableLocales_).
+      1. For each element _locale_ of _available_, do
+        1. If _locale_ contains a Unicode locale extension sequence, throw a *RangeError* exception.
+      1. Let _fallbackArgument_ be CreateArrayFromList(« _defaultLocale_ »).
+      1. Let _fallbackList_ be ? CanonicalizeLocaleList(_fallbackArgument_).
+      1. Let _fallback_ be _fallbackList_[0].
+      1. Set _options_ to ? GetOptionsObject(_options_).
+      1. Let _algorithm_ be ? GetOption(_options_, *"algorithm"*, ~string~, « *"lookup"*, *"best fit"* », *"best fit"*).
+      1. If _requested_ is empty or _available_ is empty, return _fallback_.
+      1. If _algorithm_ is *"lookup"*, then
+        1. Let _match_ be LookupMatchingLocaleByPrefix(_available_, _requested_).
+      1. Else,
+        1. Let _match_ be LookupMatchingLocaleByBestFit(_available_, _requested_).
+      1. If _match_ is *undefined*, return _fallback_.
+      1. Return _match_.[[locale]].
+    </emu-alg>
+    <p>The *"length"* property of this method is *3*<sub>𝔽</sub>.</p>
+
+    <emu-note>
+      <p>The available locales describe application resources. They need not be supported by any Intl service constructor, contain the host's default locale, or contain less specific fallback tags.</p>
+      <p>Both locale lists use CanonicalizeLocaleList. Strings, Intl.Locale objects, and array-like inputs have the same treatment as in Intl.getCanonicalLocales. A Set is not consumed as an iterable.</p>
+    </emu-note>
+    <emu-note>
+      <p>The fallback is validated even if matching would succeed. It need not be an element of the available locales. It is not added to the available locales and is not supplied to the matching operation. This method does not call DefaultLocale.</p>
+    </emu-note>
+    <emu-note>
+      <p>The result is a canonicalized available locale or the canonicalized fallback. It does not copy a Unicode locale extension sequence from a requested locale into the result. The method does not resolve calendar, numbering system, or other service options.</p>
+    </emu-note>
+    <emu-note>
+      <p>Best-fit matching remains implementation-defined as specified by LookupMatchingLocaleByBestFit. This proposal adds no requirement to use CLDR, ICU, distance scores, likely-subtag expansion, regional demotion, or any particular tie-breaking policy.</p>
+      <p>Unicode locale extension sequences in requests do not affect matching. Other extensions and private-use subtags retain the treatment defined by the selected matching operation; no application-specific meaning is assigned to them.</p>
+    </emu-note>
+  </emu-clause>
 </emu-clause>
