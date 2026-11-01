@@ -16,7 +16,7 @@ location: https://tc39.es/proposal-intl-localematcher/
 
 <emu-clause id="sec-intl.localematcher">
   <h1>Intl.LocaleMatcher</h1>
-  <p>The objects and functions defined in this clause are subject to the <a href="https://tc39.es/ecma402/#sec-requirements-for-standard-built-in-ecmascript-objects">requirements for standard built-in ECMAScript objects</a> in ECMA-402.</p>
+  <p>The objects and functions defined in this clause are subject to the <a href="https://tc39.es/ecma402/#requirements">requirements for standard built-in ECMAScript objects</a> in ECMA-402.</p>
   <p>The initial value of the *"LocaleMatcher"* property of the Intl object is %Intl.LocaleMatcher%.</p>
   <p>The LocaleMatcher object:</p>
   <ul>
