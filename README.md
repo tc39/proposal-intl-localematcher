@@ -5,8 +5,9 @@ matching already used internally by ECMA-402 formatters.
 
 **Stage 1.** Champion: [Long Ho](https://github.com/longlho).
 
-[Working spec](spec.emu) · [Design and open issues](DESIGN.md) ·
-[FormatJS ponyfill](https://formatjs.io/docs/polyfills/intl-localematcher)
+[Specification](https://tc39.es/proposal-intl-localematcher/) · [Source](spec.emu) ·
+[Design and open issues](DESIGN.md) ·
+[FormatJS ponyfill](https://formatjs.github.io/docs/polyfills/intl-localematcher/)
 
 ## API
 
@@ -53,7 +54,7 @@ JavaScript conformance tests are planned, not implemented here.
 
 ## References
 
-- [ECMA-402 negotiation](https://tc39.es/ecma402/#sec-locale-and-parameter-negotiation)
+- [ECMA-402 negotiation](https://tc39.es/ecma402/#locale-and-parameter-negotiation)
 - [UTS 35 language matching](https://www.unicode.org/reports/tr35/#LanguageMatching)
 - [RFC 4647 lookup](https://www.rfc-editor.org/rfc/rfc4647#section-3.4)
 - [Original discussion](https://github.com/tc39/ecma402/issues/513)

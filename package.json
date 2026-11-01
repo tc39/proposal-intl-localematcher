@@ -14,8 +14,8 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@tc39/ecma262-biblio": "2.1.2750",
-    "@tc39/ecma402-biblio": "2.1.1105",
+    "@tc39/ecma262-biblio": "2.2.3223",
+    "@tc39/ecma402-biblio": "2.1.1262",
     "ecmarkup": "25.0.3"
   }
 }
