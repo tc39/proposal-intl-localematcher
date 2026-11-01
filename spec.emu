@@ -11,8 +11,7 @@ location: https://tc39.es/proposal-intl-localematcher/
 
 <emu-intro id="sec-introduction">
   <h1>Introduction</h1>
-  <p>This proposal exposes locale matching for application-supplied locales. It uses the locale matching operations in ECMA-402 without specifying a locale data source or a best-fit scoring algorithm.</p>
-  <p>This is a working draft. API placement, extension handling in available locales, and fallback validation remain subject to committee discussion.</p>
+  <p>This working draft exposes ECMA-402 matching for application locales. It specifies no data source or best-fit scoring algorithm. API placement, available-locale extensions, and fallback validation remain open.</p>
 </emu-intro>
 
 <emu-clause id="sec-intl.localematcher">
@@ -36,7 +35,7 @@ location: https://tc39.es/proposal-intl-localematcher/
 
   <emu-clause id="sec-intl.localematcher.match">
     <h1>Intl.LocaleMatcher.match ( _requestedLocales_, _availableLocales_, _defaultLocale_ [ , _options_ ] )</h1>
-    <p>The method selects a locale from an application-supplied list, or returns the supplied fallback when no match is found. It performs the following steps when called:</p>
+    <p>This method returns an available locale or the explicit fallback. It performs the following steps when called:</p>
     <emu-alg>
       1. Let _requested_ be ? CanonicalizeLocaleList(_requestedLocales_).
       1. Let _available_ be ? CanonicalizeLocaleList(_availableLocales_).
@@ -58,18 +57,18 @@ location: https://tc39.es/proposal-intl-localematcher/
     <p>The *"length"* property of this method is *3*<sub>𝔽</sub>.</p>
 
     <emu-note>
-      <p>The available locales describe application resources. They need not be supported by any Intl service constructor, contain the host's default locale, or contain less specific fallback tags.</p>
-      <p>Both locale lists use CanonicalizeLocaleList. Strings, Intl.Locale objects, and array-like inputs have the same treatment as in Intl.getCanonicalLocales. A Set is not consumed as an iterable.</p>
+      <p>Available locales describe app resources, independent of Intl service support, host defaults, or parent tags.</p>
+      <p>Both lists follow Intl.getCanonicalLocales input semantics, including strings, Intl.Locale objects, and array-like inputs. Sets are not consumed as iterables.</p>
     </emu-note>
     <emu-note>
-      <p>The fallback is validated even if matching would succeed. It need not be an element of the available locales. It is not added to the available locales and is not supplied to the matching operation. This method does not call DefaultLocale.</p>
+      <p>Fallback is validated eagerly, may be outside available locales, and does not influence matching. This method does not call DefaultLocale.</p>
     </emu-note>
     <emu-note>
-      <p>The result is a canonicalized available locale or the canonicalized fallback. It does not copy a Unicode locale extension sequence from a requested locale into the result. The method does not resolve calendar, numbering system, or other service options.</p>
+      <p>The result is a canonical available tag or fallback. Requested Unicode locale extensions are not copied; service options are not resolved.</p>
     </emu-note>
     <emu-note>
-      <p>Best-fit matching remains implementation-defined as specified by LookupMatchingLocaleByBestFit. This proposal adds no requirement to use CLDR, ICU, distance scores, likely-subtag expansion, regional demotion, or any particular tie-breaking policy.</p>
-      <p>Unicode locale extension sequences in requests do not affect matching. Other extensions and private-use subtags retain the treatment defined by the selected matching operation; no application-specific meaning is assigned to them.</p>
+      <p>Best fit remains implementation-defined. No CLDR/ICU data, scoring, expansion, penalty, or tie policy is required.</p>
+      <p>Requested Unicode locale extensions are ignored. Other extensions and private-use subtags follow the selected operation, without assigned application-specific meanings.</p>
     </emu-note>
   </emu-clause>
 </emu-clause>
