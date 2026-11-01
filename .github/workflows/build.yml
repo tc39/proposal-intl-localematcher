@@ -1,6 +1,9 @@
 name: Deploy spec
 
-on: [push]
+on: [push, pull_request]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -11,9 +14,10 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: '24.x'
-    - run: npm install
+    - run: npm ci
     - run: npm run build
     - name: commit changes
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: elstudio/actions-js-build/commit@v3
       with:
         commitMessage: "fixup: [spec] `npm run build`"

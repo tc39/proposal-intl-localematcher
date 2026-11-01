@@ -21,6 +21,9 @@ Ponyfill: https://formatjs.io/docs/polyfills/intl-localematcher
 Working specification: [spec.emu](spec.emu).
 [Design notes and open questions](DESIGN.md) explain the draft semantics and
 conformance plan. These choices have not been approved by the committee.
+The notes also include a [candidate selection algorithm](DESIGN.md#candidate-best-fit-selection-algorithm)
+with implementation-defined linguistic data and a review of every open issue.
+The normative draft currently retains ECMA-402's implementation-defined best fit.
 
 ## Champion
 

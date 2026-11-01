@@ -120,6 +120,94 @@ ICU-specific expected results belong in implementation tests. Test262 should
 assert lookup results and API invariants without hardcoding ICU's best-fit
 answers. Empty requested/available lists return fallback after validation.
 
+## Candidate best-fit selection algorithm
+
+This is a discussion alternative, not the algorithm required by `spec.emu`.
+The normative draft still delegates to ECMA-402's existing best-fit operation.
+Data independence does not require leaving selection mechanics unspecified.
+
+A possible common selection algorithm takes a linguistic model containing:
+
+- A directional distance `D(requested, available)`: a finite nonnegative value,
+  zero for identical canonical tags after removing requested Unicode `u`
+  extensions. It need not be symmetric or satisfy the triangle inequality.
+- A finite nonnegative preference penalty `P` for each later request.
+- A finite positive acceptance threshold `T`, in the same units as `D` and `P`.
+
+These are internal model parameters, not new public options. No particular
+dataset, maximization algorithm, language relationship, or numeric constant is
+prescribed. Model values stay fixed during one invocation.
+
+```text
+best = absent
+For each requested locale r at index i:
+    Remove its Unicode locale extension sequence.
+    For each available locale a at index j:
+        score = D(r, a) + i * P
+        If score >= T, skip this pair.
+        If (score, i, j) precedes best's tuple, retain this pair.
+Return retained available locale, or explicit fallback if no pair survived.
+```
+
+Scores here are mathematical values; this is not a floating-point precision or
+loop-complexity requirement. Implementations can index, prune, and cache while
+preserving observable input reads and selection results.
+
+This makes selection and ties explicit while leaving linguistic data open. A
+later exact match can beat an earlier weak match without an unconditional
+exact-match pass across the request list. The explicit fallback does not enter
+scoring. Equal scores prefer the earlier request, then available-list order.
+That last tie policy is a proposal, not ICU's default/paradigm-locale ordering.
+
+There are still substantive decisions: how `P` relates to ordinary regional
+differences; how `T` separates acceptable from unrelated languages; which
+constraints to place on `D`; and whether available order should decide ties.
+Arbitrary values can still produce surprising results. A formula alone does not
+establish linguistic quality or cross-engine equivalence. Moving this framework
+into normative text would require reviewing the shared ECMA-402 best-fit
+operation, since existing service constructors use it too.
+
+The default penalty expresses a preference tradeoff, not an assumption that all
+users have a strict, complete language ranking. An unordered acceptance set or
+translation-completeness ranking would need a separate input contract.
+
+## Open-issue review
+
+All five open issues and their comments were reviewed for this draft. The
+following are proposed dispositions, not resolutions; no issues are closed.
+
+| Issue | Draft position | Remaining decision |
+| --- | --- | --- |
+| [#2: API placement](https://github.com/tc39/proposal-intl-localematcher/issues/2) | Keep the existing `Intl.LocaleMatcher.match` shape while drafting. LocaleMatcher is an ordinary namespace, with no instances. | Consider `Intl.matchLocale`; a constructor/prepared matcher needs its own reuse and data-loading rationale. |
+| [#3: Use cases](https://github.com/tc39/proposal-intl-localematcher/issues/3) | Select application translation resources, including page-language matching for WebExtensions. Accept a single locale through CanonicalizeLocaleList. | Requested order is supplied by the caller; the API cannot infer unlisted languages, translation quality, or a user's unordered acceptance set. |
+| [#4: Return type](https://github.com/tc39/proposal-intl-localematcher/issues/4) | Return a canonical String, consistent with supportedLocalesOf and resolvedOptions().locale. Accept Intl.Locale inputs. | Locale objects offer parsed fields, but lack value equality and add object allocation. Multiple results remain separate. |
+| [#6: Extensions](https://github.com/tc39/proposal-intl-localematcher/issues/6) | Ignore requested Unicode `u` extensions; provisionally reject them on available resources. Preserve other subtags for the selected operation. | Private-use tone matching is not standardized here. Review resource identity before stripping extensions or assigning private-use semantics. |
+| [#8: Multiple candidates](https://github.com/tc39/proposal-intl-localematcher/issues/8) | Keep one winner in this draft. | Define whether a future array means one winner per request, all acceptable resources, or a ranked message-fallback chain; also define deduplication and no-match handling. |
+
+The unsupported-language examples in #3 are useful regression inputs: a shared
+region is not by itself evidence that one language is a suitable substitute.
+They are reports about a historical ponyfill, not evidence of current behavior
+or required outputs for every implementation. A candidate distance model needs
+independent conformance evidence and an explicit acceptance policy.
+
+`Accept-Language` header parsing, quality weights, and wildcard ranges stay
+outside the API, as discussed in #3. `navigator.languages` already supplies a
+list; an HTTP header string is not a locale identifier.
+
+The loop in #8 selects one winner for each requested locale, with a sentinel
+fallback used to detect failure. It does not enumerate every acceptable resource
+for each request. A future API should expose no-match directly rather than
+requiring a fake default tag.
+
+Fuchsia's catalog lookup illustrates the distinction: it calls ICU once per
+request and searches the selected catalogs for each message. It does not build
+every acceptable fallback. Fluent Filtering can collect multiple matches for
+one request and uses a different matching policy. These are separate API needs,
+not proof that either implementation is a drop-in equivalent of the other.
+See [Fuchsia source](https://fuchsia.googlesource.com/fuchsia/+/refs/heads/main/src/lib/intl/lookup/rust/src/lib.rs),
+[Fluent negotiation](https://docs.rs/fluent-langneg/latest/fluent_langneg/negotiate/),
+and [ICU4X's matcher discussion](https://github.com/unicode-org/icu4x/issues/3023).
+
 ## Conformance plan
 
 | Area | Portable assertions |
