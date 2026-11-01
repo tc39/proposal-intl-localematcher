@@ -3,7 +3,7 @@
 <pre class="metadata">
 title: Intl.LocaleMatcher
 stage: 1
-contributors: Long Ho
+contributors: Ecma International, Long Ho
 location: https://tc39.es/proposal-intl-localematcher/
 </pre>
 <emu-biblio href="./node_modules/@tc39/ecma262-biblio/biblio.json"></emu-biblio>
