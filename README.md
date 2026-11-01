@@ -1,83 +1,60 @@
 # `Intl.LocaleMatcher`
 
-## Motivation
+Select an application's translation locale from user preferences. Exposes locale
+matching already used internally by ECMA-402 formatters.
 
-i18n-supported websites often get a list of preferred locales via `Accept-Language` header or `navigator.languages`. They then try to determine the best available locale based on the set of locales that they support (and have translations for).
+**Stage 1.** Champion: [Long Ho](https://github.com/longlho).
 
-This operation currently exists within ECMA-402 but is only available as an abstract operation. Surfacing this functionality as a top level API would improve locale negotiation correctness and developer productivity as sites will be able to reliably handle not only matching, but also aliases, fallbacks and such.
-
-### Use cases
-
-1. Given a set of locales an application has translations for and the set of locales a user requests, [find the best matching locales](https://github.com/vercel/next.js/issues/18676).
-2. JS runtimes (& polyfills) are not required to guarantee supporting all locales. Given a set of locales it supports and what the user requests, [find the best matching locales](https://github.com/formatjs/formatjs/discussions/2669). 
-3. An application can also provide [different "tones"](https://github.com/formatjs/formatjs/discussions/2642) of the same locales (e.g casual, formal), utilizing `-x-` private tag. Given a set of locales with extensions and what the user preference might be, find the best matching locales.
-
-## Status
-
-**Stage 1**
-
-Ponyfill: https://formatjs.io/docs/polyfills/intl-localematcher
-
-## Champion
-
-- [Long Ho (@longlho)](https://github.com/longlho)
+[Working spec](spec.emu) · [Design and open issues](DESIGN.md) ·
+[FormatJS ponyfill](https://formatjs.io/docs/polyfills/intl-localematcher)
 
 ## API
 
-```ts
-interface Options {
-    algorithm: 'lookup' | 'best fit'
-}
-
-Intl.LocaleMatcher.match(
-    requestedLocales: string[],
-    availableLocales: string[],
-    defaultLocale: string,
-    options?: Options
-): string
-```
-
-### Options
-
-1. `lookup` would continue to be the existing `LookupMatcher` implementation within ECMA-402.
-1. `best fit` would be implementation-dependent.
-
-## Examples
-
-```ts
-Intl.LocaleMatcher.match(["fr-XX", "en"], ["fr", "en"], "en"); // 'fr'
-```
-
-## Prior Arts
-
-### [@hapi/accept](https://github.com/hapijs/accept)
-
-This is the core of hapijs header parsing with quality preferences. This however does a naive hierarchy with exact matches only. For example:
-
 ```js
-Accept.language("en;q=0.7, fr-XX;q=0.8", ["fr", "en"]); // language === "en"
+Intl.LocaleMatcher.match(
+  ['fr-CA', 'en'],           // User preferences
+  ['fr', 'en'],              // Available translations
+  'en',                     // Fallback
+  {algorithm: 'lookup'}
+); // 'fr'
 ```
 
-which would not be accurate.
+- `lookup`: ECMA-402's `LookupMatchingLocaleByPrefix` (RFC 4647).
+- `best fit` (default): `LookupMatchingLocaleByBestFit`, with implementation-defined
+  linguistic policy and data. No required CLDR or ICU algorithm.
 
-### [koa](https://koajs.com/#request)
+## Draft contract
 
-Similarly, Koa's `request.acceptsLanguages` follow similar exact match algorithm.
+- Both lists use `CanonicalizeLocaleList`: strings, `Intl.Locale` objects, and
+  array-like inputs. Generic iterables are not consumed.
+- Available tags describe application resources, independently of engine support.
+  No parent resources are added.
+- Return a canonical available tag, or the eagerly validated canonical fallback.
+  Fallback may be outside the available list; it does not influence matching.
+- Ignore requested Unicode `u` extensions; reject them on available tags.
+  Private-use tags are accepted without standardized tone-matching semantics.
+- Options must be an object or `undefined`. HTTP headers, quality weights, and
+  wildcard ranges must be handled by the caller.
 
-### [UTS35 LanguageMatching](https://www.unicode.org/reports/tr35/tr35.html#LanguageMatching)
+These are draft choices, not committee consensus. API placement, extension
+handling, fallback policy, and multiple results remain open. The
+[candidate selection algorithm](DESIGN.md#candidate-best-fit-selection-algorithm)
+is a discussion option; normative best fit remains implementation-defined.
 
-This details a more sophisticated locale negotiation algorithm that is more accurate than `hapi`/`koa`
+## Build
 
-### [RFC4647 Section 3.4](https://tools.ietf.org/html/rfc4647#section-3.4)
+```sh
+npm ci
+npm run build
+```
 
-This is the `lookup` algorithm in ECMA-402.
-
-### [cldrjs's lookup implementation](https://github.com/rxaviers/cldrjs/blob/master/doc/bundle_lookup_matcher.md#implementation-details)
-
-Similar to UTS35 LanguageMatching.
+Strict ecmarkup build checks syntax, references, and algorithm lint rules.
+JavaScript conformance tests are planned, not implemented here.
 
 ## References
 
-- https://github.com/tc39/ecma402/issues/513
-- https://github.com/tc39/ecma402/issues/46
-- https://github.com/vercel/next.js/issues/18676
+- [ECMA-402 negotiation](https://tc39.es/ecma402/#sec-locale-and-parameter-negotiation)
+- [UTS 35 language matching](https://www.unicode.org/reports/tr35/#LanguageMatching)
+- [RFC 4647 lookup](https://www.rfc-editor.org/rfc/rfc4647#section-3.4)
+- [Original discussion](https://github.com/tc39/ecma402/issues/513)
+- [Next.js use case](https://github.com/vercel/next.js/issues/18676)

@@ -1,19 +1,21 @@
 {
   "private": true,
-  "name": "template-for-proposals",
-  "description": "A repository template for ECMAScript proposals.",
+  "name": "proposal-intl-localematcher",
+  "description": "ECMA-402 locale matching for application resources.",
   "scripts": {
     "start": "npm run build-loose -- --watch",
-    "build": "npm run build-loose -- --strict",
+    "build": "npm run build-loose -- --strict --lint-spec",
     "build-loose": "ecmarkup --verbose spec.emu index.html"
   },
-  "homepage": "https://github.com/tc39/template-for-proposals#readme",
+  "homepage": "https://github.com/tc39/proposal-intl-localematcher#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tc39/template-for-proposals.git"
+    "url": "git+https://github.com/tc39/proposal-intl-localematcher.git"
   },
   "license": "MIT",
   "devDependencies": {
-    "ecmarkup": "^4.0.0"
+    "@tc39/ecma262-biblio": "2.1.2750",
+    "@tc39/ecma402-biblio": "2.1.1105",
+    "ecmarkup": "25.0.3"
   }
 }

@@ -1,19 +1,23 @@
 name: Deploy spec
 
-on: [push]
+on: [push, pull_request]
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v1
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: '12.x'
-    - run: npm install
+        node-version: '24.x'
+    - run: npm ci
     - run: npm run build
     - name: commit changes
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: elstudio/actions-js-build/commit@v3
       with:
         commitMessage: "fixup: [spec] `npm run build`"
