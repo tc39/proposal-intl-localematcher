@@ -4,14 +4,21 @@ Working draft, not committee consensus. Proposed API:
 
 ```js
 const matcher = new Intl.LocaleMatcher(availableLocales, {algorithm: 'best fit'});
-const locale = matcher.match(requestedLocales) ?? defaultLocale;
+const result = matcher.match(requestedLocales);
+const locale = result?.locale ?? defaultLocale;
 ```
 
 ## Decision
 
-Prepare the supported set once; return one canonical tag or `undefined` per call.
+Prepare the supported set once; return `{locale, requestedLocale}` or `undefined`.
+`locale` selects the resource; `requestedLocale` retains the winning user preference,
+including extensions. Callers can pass that preference to formatting APIs. Neither
+field is a synthesized formatting locale.
+
+An object leaves room for useful result metadata without changing the return type.
 Constructor options configure matching, not defaulting. This replaces the static
-API and required fallback argument. It is not the current FormatJS ponyfill API.
+API and required fallback argument. The FormatJS ponyfill still uses the older API;
+`spec.emu` still returns a string and needs the result-object update.
 
 ```mermaid
 flowchart TD
@@ -19,7 +26,7 @@ flowchart TD
   constructor --> matcher[Matcher instance]
   requests[Requested locales] --> match[Validate requests and match]
   matcher --> match
-  match --> result[Canonical available tag or undefined]
+  match --> result[Match result or undefined]
   result --> caller[Caller applies fallback]
 ```
 
@@ -52,24 +59,45 @@ No new CLDR data source, version, thresholds, or numeric scores are required.
 - Each `match` checks receiver branding before reading the complete requested
   list. Empty lists or no match return `undefined`; no host default is read.
 - Reuse existing prefix/best-fit operations on the whole request list. No separate
-  exact-match prepass, synthetic parent resources, or requested-extension copying.
+  exact-match prepass or synthetic parent resources. Requested extensions never
+  become part of the selected resource tag.
 - Other extensions/private-use tags retain existing operation semantics; no tone
   policy is invented. Rejection of available `u` extensions remains provisional.
 
 Preparation/indexing is an implementation choice, without timing guarantees.
 Request getters and coercion errors remain observable on every call.
 
-## Resource identity and open issues
+## Match result and resource identity
 
-Canonical output can differ from resource-key spelling (`iw` versus `he`). This
-draft keeps string output; callers must map canonical tags to resources. ICU/Go
-indices and Fluent references motivate a possible richer result, not an added API.
+A successful match returns a fresh ordinary object with two writable, enumerable,
+configurable properties:
+
+- `locale`: an element of the canonicalized available-locale snapshot.
+- `requestedLocale`: the canonical winning request, including its extensions.
+
+```js
+const matcher = new Intl.LocaleMatcher(['de'], {algorithm: 'lookup'});
+matcher.match(['de-AT-u-ca-buddhist']);
+// {locale: 'de', requestedLocale: 'de-AT-u-ca-buddhist'}
+```
+
+Ignore requested `u` extensions when matching; retain them in `requestedLocale`.
+No match returns `undefined`. The matching operations need to identify the winning
+request as well as the available locale; reconstructing it from the returned
+resource tag or Unicode extension alone is insufficient.
+
+Canonical output can differ from resource-key spelling (`iw` versus `he`); callers
+must map canonical tags to resources. Resource indices remain open: an index into
+the original input differs from one into the canonicalized, deduplicated snapshot.
+No indices, scores, or resolved formatting locale are added here.
+
+## Open issues
 
 | Issue | Proposed position / remaining work |
 | --- | --- |
 | [#2: Placement](https://github.com/tc39/proposal-intl-localematcher/issues/2) | Constructor now owns a reusable snapshot; no namespace-only justification. API naming still reviewable. |
 | [#3: Use cases](https://github.com/tc39/proposal-intl-localematcher/issues/3) | Translation-resource selection. Cannot infer unlisted languages or translation completeness; HTTP parsing remains separate. |
-| [#4: Return type](https://github.com/tc39/proposal-intl-localematcher/issues/4) | Canonical String or undefined. Accept Intl.Locale inputs. Resource indices/objects remain open. |
+| [#4: Return type](https://github.com/tc39/proposal-intl-localematcher/issues/4) | Object with canonical `locale` and winning `requestedLocale`, or undefined. Accept Intl.Locale inputs. Resource indices remain open. |
 | [#6: Extensions](https://github.com/tc39/proposal-intl-localematcher/issues/6) | Keep requested `u` preferences separate from resource identity; defer private-use tone negotiation. |
 | [#8: Multiple results](https://github.com/tc39/proposal-intl-localematcher/issues/8) | Explicit undefined removes sentinel-default tricks. One winner per request, all acceptable resources, and message-fallback chains still need separate designs. |
 
@@ -82,7 +110,8 @@ Strict spec builds validate markup and references, not runtime behavior. Planned
 portable tests cover constructor/newTarget order, subclassing, descriptors,
 prototype and cross-realm branding, detached/proxied receivers, snapshot mutation
 and getters, option reads, per-call request validation, lookup truncation,
-canonical output, extensions, empty inputs, and explicit no-match.
+canonical result fields, winning-request association, result property descriptors,
+extensions, empty inputs, and explicit no-match.
 
 Best-fit tests must allow implementation-defined answers. ICU oracle fixtures
 belong in implementation suites. No engine implementation is added here.

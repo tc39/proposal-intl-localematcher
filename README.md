@@ -14,22 +14,26 @@ Prepare available translation locales once, then match user preferences.
 const available = ['fr', 'en'];
 const matcher = new Intl.LocaleMatcher(available, {algorithm: 'lookup'});
 
-matcher.match(['fr-CA', 'en']); // 'fr'
+matcher.match(['fr-CA', 'en']); // {locale: 'fr', requestedLocale: 'fr-CA'}
 matcher.match(['ja']);         // undefined
-const locale = matcher.match(navigator.languages) ?? 'en';
+const locale = matcher.match(navigator.languages)?.locale ?? 'en';
 ```
 
 - Constructor snapshots and canonicalizes available locales; later mutations
   don't affect it. Options are read once and require an object or `undefined`.
 - `lookup` uses RFC 4647 prefix lookup. `best fit` (default) reuses ECMA-402's
   implementation-defined matching, without requiring CLDR/ICU data or scores.
-- `match` returns one canonical available tag or `undefined`. No implicit default
-  or requested Unicode `u` extensions are added to the result.
+- `match` returns `{locale, requestedLocale}` or `undefined`. `locale` is a canonical
+  available tag; `requestedLocale` is the canonical winning request, including its
+  extensions. Requested `u` extensions do not affect matching or get appended to
+  `locale`. No implicit default or formatting locale is supplied.
 - Inputs follow `CanonicalizeLocaleList`: strings, Intl.Locale objects, and
   array-like lists. Generic iterables are not consumed. Available `u` extensions
-  remain rejected; private-use tone matching remains unspecified.
+  remain rejected provisionally; private-use tone matching remains unspecified.
 
-Draft API change: instance method replaces static `Intl.LocaleMatcher.match`.
+Draft API changes: instance method replaces static `Intl.LocaleMatcher.match`;
+an object separates resource selection from the winning user preference and leaves
+room for future metadata. `spec.emu` still returns a string and needs updating.
 The FormatJS ponyfill currently implements the older stateless API.
 
 HTTP parsing, message fallback, multiple results, and resource indices stay
