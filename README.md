@@ -33,7 +33,7 @@ const locale = matcher.match(navigator.languages)?.locale ?? 'en';
 
 Draft API changes: instance method replaces static `Intl.LocaleMatcher.match`;
 an object separates resource selection from the winning user preference and leaves
-room for future metadata. `spec.emu` still returns a string and needs updating.
+room for future metadata.
 The FormatJS ponyfill currently implements the older stateless API.
 
 HTTP parsing, message fallback, multiple results, and resource indices stay

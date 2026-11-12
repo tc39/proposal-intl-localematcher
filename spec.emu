@@ -15,6 +15,13 @@ location: https://tc39.es/proposal-intl-localematcher/
   <p>In <a href="https://tc39.es/ecma402/#sec-constructor-properties-of-the-intl-object">Constructor Properties of the Intl Object</a>, add Intl.LocaleMatcher and exclude it, alongside Intl.Locale, from the service constructors. It matches application resources rather than negotiating an implementation's supported services.</p>
 </emu-intro>
 
+<emu-clause id="sec-locale-matching-operation-changes">
+  <h1>Changes to Locale Matching Operations</h1>
+  <p>Extend the result Records of LookupMatchingLocaleByPrefix and LookupMatchingLocaleByBestFit with a [[requestedLocale]] field. Its value is the element of the requested Language Priority List whose selection produced the match, before removing its Unicode locale extension sequence.</p>
+  <p>In LookupMatchingLocaleByPrefix, at the beginning of each iteration over _requestedLocales_, let _requestedLocale_ be _locale_. When returning a matching Record, include [[requestedLocale]]: _requestedLocale_ alongside [[locale]] and [[extension]].</p>
+  <p>LookupMatchingLocaleByBestFit must return the corresponding selected request in [[requestedLocale]]. Selection still considers the whole requested Language Priority List; adding this field does not change matching policy. Calls that find no match continue to return *undefined*.</p>
+</emu-clause>
+
 <emu-clause id="localematcher-objects">
   <h1>LocaleMatcher Objects</h1>
   <p>The objects and functions defined here follow ECMA-402's <a href="https://tc39.es/ecma402/#requirements">requirements for standard built-in ECMAScript objects</a>.</p>
@@ -79,11 +86,15 @@ location: https://tc39.es/proposal-intl-localematcher/
         1. Else,
           1. Let _match_ be LookupMatchingLocaleByBestFit(_available_, _requested_).
         1. If _match_ is *undefined*, return *undefined*.
-        1. Return _match_.[[locale]].
+        1. Let _result_ be OrdinaryObjectCreate(%Object.prototype%).
+        1. Perform ! CreateDataPropertyOrThrow(_result_, *"locale"*, _match_.[[locale]]).
+        1. Perform ! CreateDataPropertyOrThrow(_result_, *"requestedLocale"*, _match_.[[requestedLocale]]).
+        1. Return _result_.
       </emu-alg>
       <p>The *"length"* property of this method is *1*<sub>𝔽</sub>.</p>
+      <p>Each successful call returns a fresh ordinary object. Its *"locale"* property is an element of [[AvailableLocales]]. Its *"requestedLocale"* property is the canonical selected request, including its extensions. Both properties are writable, enumerable, and configurable.</p>
       <emu-note>
-        Each call validates the complete request list, even with no available locales. No match returns undefined; callers can apply their own fallback. This method does not call DefaultLocale or copy requested Unicode locale extensions into the result.
+        Each call validates the complete request list, even with no available locales. No match returns undefined; callers can apply their own fallback. This method does not call DefaultLocale. Requested Unicode locale extensions are ignored during matching and retained in *"requestedLocale"*; they are not appended to *"locale"*. Neither property is a synthesized formatting locale.
       </emu-note>
       <emu-note>
         Best fit uses the existing ECMA-402 operation, with no required CLDR/ICU data, scoring, expansion, penalty, or tie policy. Other extensions and private-use subtags retain that operation's treatment; no application-specific meaning is assigned.

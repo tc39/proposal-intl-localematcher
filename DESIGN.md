@@ -17,8 +17,7 @@ field is a synthesized formatting locale.
 
 An object leaves room for useful result metadata without changing the return type.
 Constructor options configure matching, not defaulting. This replaces the static
-API and required fallback argument. The FormatJS ponyfill still uses the older API;
-`spec.emu` still returns a string and needs the result-object update.
+API and required fallback argument. The FormatJS ponyfill still uses the older API.
 
 ```mermaid
 flowchart TD
@@ -82,7 +81,7 @@ matcher.match(['de-AT-u-ca-buddhist']);
 ```
 
 Ignore requested `u` extensions when matching; retain them in `requestedLocale`.
-No match returns `undefined`. The matching operations need to identify the winning
+No match returns `undefined`. The matching operations identify the winning
 request as well as the available locale; reconstructing it from the returned
 resource tag or Unicode extension alone is insufficient.
 
