@@ -53,6 +53,61 @@ These systems do not establish one common scoring formula. Keep best fit
 implementation-defined; the earlier weighted-distance sketch is not adopted.
 No new CLDR data source, version, thresholds, or numeric scores are required.
 
+## Chained negotiation
+
+These discussions motivate keeping resource selection separate from preference
+resolution and preserving more than one candidate:
+
+- [ICU4X #58](https://github.com/unicode-org/icu4x/issues/58#issuecomment-1855291733):
+  translations, formatters, and speech models can have different available locales.
+  Availability may also depend on formatter options. One resource match cannot
+  establish support for every downstream operation.
+- [ICU4X #3023](https://github.com/unicode-org/icu4x/issues/3023#issuecomment-1404009790):
+  distinct negotiation strategies have different tradeoffs. The comment favors a
+  Fluent-based experimental API without claiming one algorithm fits every use case.
+- [ECMA-402 #513](https://github.com/tc39/ecma402/issues/513#issuecomment-754202897):
+  negotiation output often becomes another negotiation's input. Keeping only one
+  resource tag loses regional preferences and secondary languages. The discussion
+  considers three strategies with either requested or supported locales as output.
+
+Our result retains both identities, but callers still choose what to pass onward:
+
+```js
+const requested = ['de-CH-u-hc-h23', 'fr-CH'];
+const translations = new Intl.LocaleMatcher(['de', 'fr'], {algorithm: 'lookup'});
+const dates = new Intl.LocaleMatcher(['fr-CH', 'en'], {algorithm: 'lookup'});
+const translation = translations.match(requested);
+// {locale: 'de', requestedLocale: 'de-CH-u-hc-h23'}
+dates.match([translation.locale]); // undefined
+dates.match(requested);
+// {locale: 'fr-CH', requestedLocale: 'fr-CH'}
+```
+
+Using the original requests can preserve a secondary preference where passing only
+`de` would fail. Whether French dates belong in German UI is application policy,
+not a recommendation from the matcher. Applications can also negotiate against a
+resource set satisfying several subsystems. Neither approach replaces checking
+actual formatter support or resolving options and extensions.
+
+### Open gap: resources versus accepted requests
+
+Current `matchAll` deduplicates by available locale:
+
+```js
+new Intl.LocaleMatcher(['en'], {algorithm: 'lookup'})
+  .matchAll(['en-US', 'en-GB']);
+// [{locale: 'en', requestedLocale: 'en-US'}]
+```
+
+That avoids loading the same resource twice, but drops the accepted `en-GB`
+preference. `filter` also keeps only the first request for each resource. Projecting
+`requestedLocale` from either result cannot recover discarded preferences.
+
+Before Stage 2, decide whether to preserve one result per successful request and
+leave resource deduplication to callers, or expose distinct resource/request output
+policies. This remains open; the current algorithms are unchanged. Neither array
+is a universal fallback chain for nested formatters or missing messages.
+
 ## Observable semantics
 
 - Constructor requires `new`. Resolve `newTarget.prototype`, canonicalize complete
@@ -138,7 +193,8 @@ No indices, scores, or resolved formatting locale are added here.
 | [#8: Multiple results](https://github.com/tc39/proposal-intl-localematcher/issues/8) | `matchAll` selects one winner per request; `filter` returns all acceptable resources. Message-fallback chains remain outside this API. |
 
 No issues are closed. `algorithm` versus `localeMatcher`, stronger exact-match
-invariants, and available-extension policy remain open.
+invariants, available-extension policy, and resource-versus-request deduplication
+remain open.
 
 ## Validation plan
 

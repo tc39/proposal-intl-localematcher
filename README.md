@@ -39,6 +39,12 @@ search for alternatives when winners repeat. `filter` groups resources by their
 earliest accepting request, preserving available order within each group. Neither
 method defines a message-fallback chain; no matches returns `[]`.
 
+Resource selection does not establish formatter support. Downstream operations
+may need the original requests, not only the selected resource. Both multi-result
+methods currently deduplicate resources, which can discard distinct accepted
+requests such as `en-US` and `en-GB` matching `en`. Request-preserving output remains
+an [open design question](DESIGN.md#chained-negotiation).
+
 Lookup filtering tests prefix lookup against each candidate alone. Best fit uses
 shared pairwise acceptance, independent of other candidates and request-priority
 penalties. Filter results are not sorted by linguistic distance.
