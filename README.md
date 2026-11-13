@@ -1,6 +1,6 @@
 # `Intl.LocaleMatcher`
 
-Prepare available translation locales once, then match user preferences.
+Prepare available locales once, then select translations, spellcheckers, or picker candidates.
 
 **Stage 1.** Champion: [Long Ho](https://github.com/longlho).
 
@@ -15,9 +15,33 @@ const available = ['fr', 'en'];
 const matcher = new Intl.LocaleMatcher(available, {algorithm: 'lookup'});
 
 matcher.match(['fr-CA', 'en']); // {locale: 'fr', requestedLocale: 'fr-CA'}
-matcher.match(['ja']);         // undefined
+matcher.match(['ja']); // undefined
 const locale = matcher.match(navigator.languages)?.locale ?? 'en';
 ```
+
+| Method | Result | Use case |
+| --- | --- | --- |
+| `match(requested)` | One result or `undefined` | App translation |
+| `matchAll(requested)` | One winner per request, deduplicated | Multilingual spellchecking |
+| `filter(requested)` | All acceptable available locales | Locale picker |
+
+```js
+const regional = new Intl.LocaleMatcher(['fr', 'en', 'fr-CA'], {algorithm: 'lookup'});
+regional.matchAll(['fr-CA']);
+// [{locale: 'fr-CA', requestedLocale: 'fr-CA'}]
+regional.filter(['fr-CA']);
+// [{locale: 'fr', requestedLocale: 'fr-CA'},
+//  {locale: 'fr-CA', requestedLocale: 'fr-CA'}]
+```
+
+`matchAll` keeps the first result for each resource, in request order. It does not
+search for alternatives when winners repeat. `filter` groups resources by their
+earliest accepting request, preserving available order within each group. Neither
+method defines a message-fallback chain; no matches returns `[]`.
+
+Lookup filtering tests prefix lookup against each candidate alone. Best fit uses
+shared pairwise acceptance, independent of other candidates and request-priority
+penalties. Filter results are not sorted by linguistic distance.
 
 - Constructor snapshots and canonicalizes available locales; later mutations
   don't affect it. Options are read once and require an object or `undefined`.
@@ -36,7 +60,7 @@ an object separates resource selection from the winning user preference and leav
 room for future metadata.
 The FormatJS ponyfill currently implements the older stateless API.
 
-HTTP parsing, message fallback, multiple results, and resource indices stay
+HTTP parsing, message fallback, weights, scores, and resource indices stay
 outside this draft. Open decisions and foundational precedents are in
 [design notes](DESIGN.md).
 

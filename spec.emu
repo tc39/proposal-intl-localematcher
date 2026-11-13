@@ -11,7 +11,7 @@ location: https://tc39.es/proposal-intl-localematcher/
 
 <emu-intro id="sec-introduction">
   <h1>Introduction</h1>
-  <p>This working draft prepares application-supplied locales once and matches requests without implicit defaulting. Best-fit policy and data remain implementation-defined.</p>
+  <p>This working draft prepares application-supplied locales once and selects one resource, one resource per request, or all acceptable resources without implicit defaulting. Best-fit policy and data remain implementation-defined.</p>
   <p>In <a href="https://tc39.es/ecma402/#sec-constructor-properties-of-the-intl-object">Constructor Properties of the Intl Object</a>, add Intl.LocaleMatcher and exclude it, alongside Intl.Locale, from the service constructors. It matches application resources rather than negotiating an implementation's supported services.</p>
 </emu-intro>
 
@@ -20,6 +20,23 @@ location: https://tc39.es/proposal-intl-localematcher/
   <p>Extend the result Records of LookupMatchingLocaleByPrefix and LookupMatchingLocaleByBestFit with a [[requestedLocale]] field. Its value is the element of the requested Language Priority List whose selection produced the match, before removing its Unicode locale extension sequence.</p>
   <p>In LookupMatchingLocaleByPrefix, at the beginning of each iteration over _requestedLocales_, let _requestedLocale_ be _locale_. When returning a matching Record, include [[requestedLocale]]: _requestedLocale_ alongside [[locale]] and [[extension]].</p>
   <p>LookupMatchingLocaleByBestFit must return the corresponding selected request in [[requestedLocale]]. Selection still considers the whole requested Language Priority List; adding this field does not change matching policy. Calls that find no match continue to return *undefined*.</p>
+  <p>For best fit, a selected available/requested pair must be accepted by BestFitLocaleMatch. Acceptance is independent of available-list order, other candidates, and request-list priority penalties. With singleton available and requested lists, LookupMatchingLocaleByBestFit returns a match if and only if BestFitLocaleMatch accepts that pair. Selection among acceptable pairs remains implementation-defined.</p>
+
+  <emu-clause id="sec-bestfitlocalematch" type="abstract operation" aoid="BestFitLocaleMatch">
+    <h1>BestFitLocaleMatch ( _availableLocale_, _requestedLocale_ )</h1>
+    <p>The implementation-defined abstract operation BestFitLocaleMatch takes arguments _availableLocale_ (a Unicode canonicalized locale identifier without a Unicode locale extension sequence) and _requestedLocale_ (a Unicode canonicalized locale identifier) and returns a Boolean. It determines whether _availableLocale_ is an acceptable resource for _requestedLocale_, using the same pairwise acceptance policy as LookupMatchingLocaleByBestFit and ignoring the requested Unicode locale extension sequence. The policy may be directional. No data source, distance scale, or numeric threshold is required.</p>
+  </emu-clause>
+
+  <emu-clause id="sec-createlocalematchresult" type="abstract operation" aoid="CreateLocaleMatchResult">
+    <h1>CreateLocaleMatchResult ( _locale_, _requestedLocale_ )</h1>
+    <p>The abstract operation CreateLocaleMatchResult takes arguments _locale_ (a String) and _requestedLocale_ (a String) and returns an Object. It performs the following steps when called:</p>
+    <emu-alg>
+      1. Let _result_ be OrdinaryObjectCreate(%Object.prototype%).
+      1. Perform ! CreateDataPropertyOrThrow(_result_, *"locale"*, _locale_).
+      1. Perform ! CreateDataPropertyOrThrow(_result_, *"requestedLocale"*, _requestedLocale_).
+      1. Return _result_.
+    </emu-alg>
+  </emu-clause>
 </emu-clause>
 
 <emu-clause id="localematcher-objects">
@@ -86,10 +103,7 @@ location: https://tc39.es/proposal-intl-localematcher/
         1. Else,
           1. Let _match_ be LookupMatchingLocaleByBestFit(_available_, _requested_).
         1. If _match_ is *undefined*, return *undefined*.
-        1. Let _result_ be OrdinaryObjectCreate(%Object.prototype%).
-        1. Perform ! CreateDataPropertyOrThrow(_result_, *"locale"*, _match_.[[locale]]).
-        1. Perform ! CreateDataPropertyOrThrow(_result_, *"requestedLocale"*, _match_.[[requestedLocale]]).
-        1. Return _result_.
+        1. Return CreateLocaleMatchResult(_match_.[[locale]], _match_.[[requestedLocale]]).
       </emu-alg>
       <p>The *"length"* property of this method is *1*<sub>𝔽</sub>.</p>
       <p>Each successful call returns a fresh ordinary object. Its *"locale"* property is an element of [[AvailableLocales]]. Its *"requestedLocale"* property is the canonical selected request, including its extensions. Both properties are writable, enumerable, and configurable.</p>
@@ -98,6 +112,60 @@ location: https://tc39.es/proposal-intl-localematcher/
       </emu-note>
       <emu-note>
         Best fit uses the existing ECMA-402 operation, with no required CLDR/ICU data, scoring, expansion, penalty, or tie policy. Other extensions and private-use subtags retain that operation's treatment; no application-specific meaning is assigned.
+      </emu-note>
+    </emu-clause>
+
+    <emu-clause id="sec-intl.localematcher.prototype.matchall">
+      <h1>Intl.LocaleMatcher.prototype.matchAll ( _requestedLocales_ )</h1>
+      <emu-alg>
+        1. Let _matcher_ be the *this* value.
+        1. Perform ? RequireInternalSlot(_matcher_, [[InitializedLocaleMatcher]]).
+        1. Let _requested_ be ? CanonicalizeLocaleList(_requestedLocales_).
+        1. Let _available_ be _matcher_.[[AvailableLocales]].
+        1. Let _results_ be a new empty List.
+        1. Let _seen_ be a new empty List.
+        1. For each element _requestedLocale_ of _requested_, do
+          1. If _matcher_.[[LocaleMatcher]] is *"lookup"*, then
+            1. Let _match_ be LookupMatchingLocaleByPrefix(_available_, « _requestedLocale_ »).
+          1. Else,
+            1. Let _match_ be LookupMatchingLocaleByBestFit(_available_, « _requestedLocale_ »).
+          1. If _match_ is not *undefined* and _seen_ does not contain _match_.[[locale]], then
+            1. Append _match_.[[locale]] to _seen_.
+            1. Append CreateLocaleMatchResult(_match_.[[locale]], _match_.[[requestedLocale]]) to _results_.
+        1. Return CreateArrayFromList(_results_).
+      </emu-alg>
+      <p>The *"length"* property of this method is *1*<sub>𝔽</sub>.</p>
+      <emu-note>
+        Each request is matched independently against the full available list. Results follow request order, with duplicate resources omitted after their first occurrence. A duplicate does not trigger a search for another resource. An empty input or no match returns a fresh empty Array. The first result need not equal match's whole-list best-fit selection.
+      </emu-note>
+    </emu-clause>
+
+    <emu-clause id="sec-intl.localematcher.prototype.filter">
+      <h1>Intl.LocaleMatcher.prototype.filter ( _requestedLocales_ )</h1>
+      <emu-alg>
+        1. Let _matcher_ be the *this* value.
+        1. Perform ? RequireInternalSlot(_matcher_, [[InitializedLocaleMatcher]]).
+        1. Let _requested_ be ? CanonicalizeLocaleList(_requestedLocales_).
+        1. Let _available_ be _matcher_.[[AvailableLocales]].
+        1. Let _results_ be a new empty List.
+        1. Let _seen_ be a new empty List.
+        1. For each element _requestedLocale_ of _requested_, do
+          1. For each element _availableLocale_ of _available_, do
+            1. If _seen_ does not contain _availableLocale_, then
+              1. If _matcher_.[[LocaleMatcher]] is *"lookup"*, then
+                1. Let _match_ be LookupMatchingLocaleByPrefix(« _availableLocale_ », « _requestedLocale_ »).
+                1. Let _accepted_ be *false*.
+                1. If _match_ is not *undefined*, set _accepted_ to *true*.
+              1. Else,
+                1. Let _accepted_ be BestFitLocaleMatch(_availableLocale_, _requestedLocale_).
+              1. If _accepted_ is *true*, then
+                1. Append _availableLocale_ to _seen_.
+                1. Append CreateLocaleMatchResult(_availableLocale_, _requestedLocale_) to _results_.
+        1. Return CreateArrayFromList(_results_).
+      </emu-alg>
+      <p>The *"length"* property of this method is *1*<sub>𝔽</sub>.</p>
+      <emu-note>
+        Returns every acceptable available resource once, grouped by the earliest request that accepts it. Within each group, available-list order is preserved. This is not a ranking by linguistic distance. Lookup acceptance uses prefix lookup against each candidate alone; it does not use RFC 4647 filtering. An empty input or no match returns a fresh empty Array.
       </emu-note>
     </emu-clause>
 
